@@ -1,3 +1,9 @@
+aws iam create-role \
+--role-name lambda-ex \
+--assume-role-policy-document '{"Version": "2012-10-17","Statement": [{ "Effect": "Allow", "Principal": {"Service": "lambda.amazonaws.com"}, "Action": "sts:AssumeRole"}]}'
+
+
+
 aws lambda create-function
 --function-name ProcessKinesisRecords \
 --zip-file fileb://function.zip  \
@@ -38,3 +44,7 @@ aws lambda list-event-source-mappings --function-name ProcessKinesisRecords \
 
 
 # more about kinesis
+
+
+# see the result in cloud-watch / log groups/ lambda..../
+# everytime lambda function is updated, new log stream is created
