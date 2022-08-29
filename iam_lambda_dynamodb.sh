@@ -55,7 +55,7 @@ aws iam attach-role-policy \
 --role-name myapp_lambda_iam_role \
 --policy-arn arn:aws:iam::aws:policy/CloudWatchFullAccess
  
-# if in windows git bash, no jq, run following command in admin
+# if in windows git bash, no jq, run following command as admin
 curl -L -o /usr/bin/jq.exe https://github.com/stedolan/jq/releases/latest/download/jq-win64.exe
 
 
@@ -73,16 +73,23 @@ zip function.zip lambda_function.py
  
 ## Create a lambda function
 aws lambda create-function \
---function-name myapp_lambda_function \
+--function-name myapp_lambda_function2 \
 --runtime python3.8 \
 --zip-file fileb://function.zip  \
 --handler lambda_func.lambda_handler  \
 --runtime python3.8 \
 --role $IAM_ROLE_ARN
+
+
+# update lambda function
+
+aws lambda update-function-code \
+--function-name ProcessKinesisRecords \
+--zip-file fileb://function.zip 
  
 ## Get lambda function ARN
 LAMBDA_ARN=$(aws lambda get-function \
---function-name  myapp_lambda_function | jq -r .Configuration.FunctionArn) &&
+--function-name  myapp_lambda_function2 | jq -r .Configuration.FunctionArn) &&
 echo $LAMBDA_ARN
 
 

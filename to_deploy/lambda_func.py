@@ -7,7 +7,7 @@ import certifi
 import bson
 
 ca = certifi.where()
-print(ca)
+print("This is where certifi is located" + ca)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -43,31 +43,29 @@ def buildResponse(status_code, body=None):
             'Access-Control-Allow-Origin': '*',
         },
     }
-    print(body)
-    print(status_code)
+    print(body,status_code)
     print('This is response b4 add body ')
     print(response)
     if body is not None:
         response['body'] = json.dumps(body, cls=CustomEncoder)
-    print('This is response after add body ')
-    print(response)
-
+        print('This is response after add body ')
+        print(response)
     return response
 
 
 def findOne(filter_query):
     try:
         response = table.find_one(filter_query)
-        print(filter_query)
-        print(response)
-        if "_id" in response:
+        if response is not None:
             return buildResponse(200, response)
         else:
             return buildResponse(
                 404, {"Message": f" filter_query {filter_query} not found in table"}
             )
-    except:
+    except Exception as e:
+        body = {"Excepting":e}
         logger.exception("Something here in findOne, logged...")
+        return buildResponse(502,body)
 
 
 def getProducts():
@@ -75,8 +73,10 @@ def getProducts():
         response = list(table.find({}))
         body = {"products": response}
         return buildResponse(200, body)
-    except:
+    except Exception as e:
+        body = {"Excepting":e}
         logger.exception("Something wrong for getProducts, logging...")
+        return buildResponse(502,body)
 
 
 def insertOne(request_body):
@@ -84,8 +84,10 @@ def insertOne(request_body):
         table.insert_one(request_body)
         body = {"Operation": "SAVE", "Message": "SUCCESS", "Item": request_body}
         return buildResponse(200, body)
-    except:
+    except Exception as e:
+        body = {"Excepting":e}
         logger.exception("Something wrong for insertOne, logging...")
+        return buildResponse(502,body)
 
 
 def updateOne(query_key, query_value, update_key, update_value):
@@ -93,30 +95,37 @@ def updateOne(query_key, query_value, update_key, update_value):
         response = table.update_one(
             filter={query_key: query_value}, update={update_key: update_value}
         )
+
         body = {
             "OPERATION": "UPDATE",
             "Message": "SUCCESS",
-            "UpdateAttributes": response,
+            "UpdateTarget": {query_key: query_value},
+            "UpdateAttributes": {update_key: update_value}
         }
         return buildResponse(200, body)
 
-    except:
+    except Exception as e:
+        body = {"Excepting":e}
         logger.exception("Something wrong for updateOne, logging...")
+        return buildResponse(502,body)
 
 
-def deleteOne(delete_key, delete_val):
+def deleteOne(request_body):
     try:
-        response = table.delete_one(filter={delete_key: delete_val})
-        body = {"Operation": "DELETE", "Message": "SUCCESS", "deleteItem": response}
+        response = table.delete_one(filter=request_body)
+        body = {"Operation": "DELETE", "Message": "SUCCESS", "deleteItem": request_body}
         return buildResponse(200, body)
 
-    except:
+    except Exception as e:
+        body = {"Excepting":e}
+        return buildResponse(502,body)
         pass
 
 
 def lambda_handler(event, context):
     logger.info(event)
     print("This is the event", event)
+    print(type(event),type(context))
 
     httpMethod = event["httpMethod"]
     path = event["path"]
@@ -142,9 +151,7 @@ def lambda_handler(event, context):
         )
     elif httpMethod == deleteMethod and path == productPath:
         request_body = json.loads(event["body"])
-        delete_key = request_body["delete_key"]
-        delete_val = request_body["delete_val"]
-        response = deleteOne(delete_key, delete_val)
+        response = deleteOne(request_body)
 
     else:
         response = buildResponse(404, "Not Found")
