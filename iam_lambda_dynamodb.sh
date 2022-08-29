@@ -84,7 +84,7 @@ aws lambda create-function \
 # update lambda function
 
 aws lambda update-function-code \
---function-name ProcessKinesisRecords \
+--function-name myapp_lambda_function2 \
 --zip-file fileb://function.zip 
  
 ## Get lambda function ARN

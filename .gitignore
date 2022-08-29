@@ -1,2 +1,3 @@
 to_deploy/*
 !to_deploy/lambda_func.py
+!to_deploy/deploy.sh
