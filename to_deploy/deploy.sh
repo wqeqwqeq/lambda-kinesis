@@ -12,9 +12,3 @@ lambda_deploy()
     --zip-file fileb://function.zip | jq -r .FunctionName)
     echo " Successful upload new function.zip to $success_func "
 }
-
-test()
-{
-test=$1
-echo $test
-}

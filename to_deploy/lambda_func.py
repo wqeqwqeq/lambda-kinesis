@@ -63,7 +63,7 @@ def findOne(filter_query):
                 404, {"Message": f" filter_query {filter_query} not found in table"}
             )
     except Exception as e:
-        body = {"Excepting":e}
+        body = {"Excepting":str(e)}
         logger.exception("Something here in findOne, logged...")
         return buildResponse(502,body)
 
@@ -74,7 +74,7 @@ def getProducts():
         body = {"products": response}
         return buildResponse(200, body)
     except Exception as e:
-        body = {"Excepting":e}
+        body = {"Excepting":str(e)}
         logger.exception("Something wrong for getProducts, logging...")
         return buildResponse(502,body)
 
@@ -85,27 +85,31 @@ def insertOne(request_body):
         body = {"Operation": "SAVE", "Message": "SUCCESS", "Item": request_body}
         return buildResponse(200, body)
     except Exception as e:
-        body = {"Excepting":e}
+        body = {"Excepting":str(e)}
         logger.exception("Something wrong for insertOne, logging...")
         return buildResponse(502,body)
 
 
-def updateOne(query_key, query_value, update_key, update_value):
+def updateOne(filter_query, update_query):
     try:
-        response = table.update_one(
-            filter={query_key: query_value}, update={update_key: update_value}
-        )
+        response = table.find_one(filter_query)
+        if response is not None:
+            response = table.update_one(
+                filter=filter_query, update={"$set": update_query}
+            )
 
-        body = {
-            "OPERATION": "UPDATE",
-            "Message": "SUCCESS",
-            "UpdateTarget": {query_key: query_value},
-            "UpdateAttributes": {update_key: update_value}
-        }
-        return buildResponse(200, body)
+            body = {
+                "OPERATION": "UPDATE",
+                "Message": "SUCCESS",
+                "UpdateTarget": filter_query,
+                "UpdatedAttributes": update_query
+            }
+            return buildResponse(200, body)
+        else:
+            return buildResponse(404,{"Message": f"filter query {filter_query} not found in db"})
 
     except Exception as e:
-        body = {"Excepting":e}
+        body = {"Excepting":str(e)}
         logger.exception("Something wrong for updateOne, logging...")
         return buildResponse(502,body)
 
@@ -117,7 +121,7 @@ def deleteOne(request_body):
         return buildResponse(200, body)
 
     except Exception as e:
-        body = {"Excepting":e}
+        body = {"Excepting":str(e)}
         return buildResponse(502,body)
         pass
 
@@ -144,10 +148,8 @@ def lambda_handler(event, context):
     elif httpMethod == patchMethod and path == productPath:
         request_body = json.loads(event["body"])
         response = updateOne(
-            request_body["queryValue"],
-            request_body["queryKey"],
-            request_body["updateKey"],
-            request_body["updateValue"],
+            request_body["filter_query"],
+            request_body["update_query"]
         )
     elif httpMethod == deleteMethod and path == productPath:
         request_body = json.loads(event["body"])
@@ -159,10 +161,3 @@ def lambda_handler(event, context):
     return response
 
 
-# event = {
-#     "httpMethod": "Get",
-#     "path": "/product",
-#     "queryStringParameters": {"name": "Sammy"},
-# }
-# response = findOne(event["queryStringParameters"])
-# print(response)
