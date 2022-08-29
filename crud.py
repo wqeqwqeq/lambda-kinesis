@@ -80,7 +80,7 @@ def saveProduct(request_body):
         table.put_item(Item = request_body)
         body = {
             "Operation": "SAVE",
-            "Message": "SUCCESS"
+            "Message": "SUCCESS",
             "Item": request_body
 
         }

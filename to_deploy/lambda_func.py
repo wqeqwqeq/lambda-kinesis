@@ -3,22 +3,25 @@ import json
 import logging
 from decimal import Decimal
 import pymongo
+import certifi
+import bson
 
-
+ca = certifi.where()
+print(ca)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 url = "mongodb+srv://temp:stanleytest@cluster0.rcyqsmm.mongodb.net/?retryWrites=true&w=majority"
-client = pymongo.MongoClient(url)
+client = pymongo.MongoClient(url, tlsCAFile=ca)
 
 
 db = client.workspace
-table = db.products
+table = db.work
 
-getMethod = "Get"
-postMethod = "Post"
-patchMethod = "Patch"
-deleteMethod = "Delete"
+getMethod = "GET"
+postMethod = "POST"
+patchMethod = "PATCH"
+deleteMethod = "DELETE"
 healthPath = "/health"
 productPath = "/product"
 productsPath = "/products"
@@ -26,29 +29,38 @@ productsPath = "/products"
 
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, Decimal):
-            return float(obj)
+        if isinstance(obj, bson.objectid.ObjectId):
+            return str(obj)
         else:
             return json.JSONEncoder.default(self, obj)
 
 
 def buildResponse(status_code, body=None):
     response = {
-        "status_code": status_code,
-        "headers": {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
+        'statusCode': status_code,
+        'headers': {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
         },
     }
+    print(body)
+    print(status_code)
+    print('This is response b4 add body ')
+    print(response)
     if body is not None:
-        response["body"] = json.dumps(body, cls=CustomEncoder)
+        response['body'] = json.dumps(body, cls=CustomEncoder)
+    print('This is response after add body ')
+    print(response)
+
     return response
 
 
 def findOne(filter_query):
     try:
         response = table.find_one(filter_query)
-        if len(response) != 0 and "_id" in response:
+        print(filter_query)
+        print(response)
+        if "_id" in response:
             return buildResponse(200, response)
         else:
             return buildResponse(
@@ -104,6 +116,7 @@ def deleteOne(delete_key, delete_val):
 
 def lambda_handler(event, context):
     logger.info(event)
+    print("This is the event", event)
 
     httpMethod = event["httpMethod"]
     path = event["path"]
@@ -138,3 +151,11 @@ def lambda_handler(event, context):
 
     return response
 
+
+# event = {
+#     "httpMethod": "Get",
+#     "path": "/product",
+#     "queryStringParameters": {"name": "Sammy"},
+# }
+# response = findOne(event["queryStringParameters"])
+# print(response)
