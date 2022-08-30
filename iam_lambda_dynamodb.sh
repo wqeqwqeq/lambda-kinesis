@@ -9,8 +9,8 @@ sudo ./aws/install
 # just a example
 aws configure
 # can be find https://us-east-1.console.aws.amazon.com/iam/home?region=us-east-2#/security_credentials 
-AWS Access Key ID [None]: AKIAIOSFODNN7EXAMPLE
-AWS Secret Access Key [None]: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+AWS Access Key ID [None]: 
+AWS Secret Access Key [None]: 
 Default region name [None]: us-east-2
 Default output format [None]: json
 
