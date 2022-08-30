@@ -12,3 +12,15 @@ lambda_deploy()
     --zip-file fileb://function.zip | jq -r .FunctionName)
     echo " Successful upload new function.zip to $success_func "
 }
+
+# message_to_kinesis()
+# {
+#     set -eu
+#     stream_name=$1
+#     message=$2
+#     aws kinesis put-record \
+#     --stream-name $stream_name \
+#     --partition-key 1 \
+#     # --cli-binary-format raw-in-base64-out \
+#     --data $message
+# }

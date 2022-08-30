@@ -114,11 +114,22 @@ aws lambda list-event-source-mappings --function-name myapp_lambda_function2 \
 
 
 ## kinesis put data 
-aws kinesis put-record 
---stream-name lambda-stream 
---partition-key 1 
---cli-binary-format raw-in-base64-out 
+aws kinesis put-record \
+--stream-name lambda-stream \
+--partition-key 1 \
 --data "a"
+
+
+## kinesis put 1000 records with 0.01 second sleep 
+for k in $(seq 2 1000)
+do 
+  aws kinesis put-record \
+  --stream-name lambda-stream \
+  --partition-key 1 \
+  --data "message $k hello mongo, from kinesis"   
+  echo  "message $k hello mongo, from kinesis:)" 
+  sleep 0.01
+done
 
 
 
@@ -126,6 +137,8 @@ aws kinesis put-record
 
 
 # Create a API gateway, can be replaced by swagger 
+aws apigateway import-rest-api --body 'fileb:///path/to/API_Swagger_template.json'
+
 ## Create a HTTP API
 API_ID=$(aws apigatewayv2 create-api \
 --name myapp_http_api \

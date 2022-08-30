@@ -1,10 +1,11 @@
 import boto3
 import json
 import logging
-from decimal import Decimal
 import pymongo
 import certifi
 import bson
+import base64
+
 
 ca = certifi.where()
 print("This is where certifi is located" + ca)
@@ -15,8 +16,11 @@ url = "mongodb+srv://temp:stanleytest@cluster0.rcyqsmm.mongodb.net/?retryWrites=
 client = pymongo.MongoClient(url, tlsCAFile=ca)
 
 
-db = client.workspace
-table = db.work
+# db = client.workspace
+# table = db.work
+
+db = client.from_kinesis
+tbl = db.test_stream
 
 getMethod = "GET"
 postMethod = "POST"
@@ -125,39 +129,50 @@ def deleteOne(request_body):
         return buildResponse(502,body)
         pass
 
-
+# add kinesis part but maybe seperate lambda function should be better
 def lambda_handler(event, context):
     logger.info(event)
     print("This is the event", event)
-    print(type(event),type(context))
 
-    httpMethod = event["httpMethod"]
-    path = event["path"]
-    if httpMethod == getMethod and path == healthPath:
-        response = buildResponse(200)
+    if "Records" not in event:
+       
+        #this is from api gateway
 
-    elif httpMethod == getMethod and path == productPath:
-        response = findOne(event["queryStringParameters"])
+        httpMethod = event["httpMethod"]
+        path = event["path"]
+        if httpMethod == getMethod and path == healthPath:
+            response = buildResponse(200)
 
-    elif httpMethod == getMethod and path == productsPath:
-        response = getProducts()
+        elif httpMethod == getMethod and path == productPath:
+            response = findOne(event["queryStringParameters"])
 
-    elif httpMethod == postMethod and path == productPath:
-        response = insertOne(json.loads(event["body"]))
+        elif httpMethod == getMethod and path == productsPath:
+            response = getProducts()
 
-    elif httpMethod == patchMethod and path == productPath:
-        request_body = json.loads(event["body"])
-        response = updateOne(
-            request_body["filter_query"],
-            request_body["update_query"]
-        )
-    elif httpMethod == deleteMethod and path == productPath:
-        request_body = json.loads(event["body"])
-        response = deleteOne(request_body)
+        elif httpMethod == postMethod and path == productPath:
+            response = insertOne(json.loads(event["body"]))
 
+        elif httpMethod == patchMethod and path == productPath:
+            request_body = json.loads(event["body"])
+            response = updateOne(
+                request_body["filter_query"],
+                request_body["update_query"]
+            )
+        elif httpMethod == deleteMethod and path == productPath:
+            request_body = json.loads(event["body"])
+            response = deleteOne(request_body)
+
+        else:
+            response = buildResponse(404, "Not Found")
+
+        return response
     else:
-        response = buildResponse(404, "Not Found")
-
-    return response
-
-
+        # this Kinesis stream
+        try:
+            for record in event["Records"]:
+                val = str(base64.b64decode(record["kinesis"]["data"]))
+                record["kinesis"]["data"] = val
+                print("Value insert into mongodb", val)
+                tbl.insert_one(record)
+        except Exception as e:
+            print("Exception in dump to mongodb", str(e))
